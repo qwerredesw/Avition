@@ -12,27 +12,26 @@
         :root { --primary-color: #2ecc71; --bg-color: #f8f9fa; }
         body { background-color: var(--bg-color); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding-bottom: 80px; }
         
-        /* Карточки */
         .product-card { border: none; border-radius: 12px; background: white; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: transform 0.2s; cursor: pointer; }
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .product-img { height: 180px; object-fit: cover; width: 100%; }
         
-        /* Чат */
         .chat-list-item { cursor: pointer; transition: 0.2s; border-radius: 10px; }
         .chat-list-item:hover { background: #e9ecef; }
+        /* Аватарка в списке чатов */
+        .chat-avatar { width: 40px; height: 40px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 20px; flex-shrink: 0; }
+
         .chat-window { height: 65vh; overflow-y: auto; background: #f1f2f6; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
         .message { padding: 10px 15px; border-radius: 15px; max-width: 75%; font-size: 0.95rem; position: relative; word-wrap: break-word; }
         .msg-me { background: var(--primary-color); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-other { background: white; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .msg-img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
         
-        /* Навигация снизу */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; padding: 10px 0; display: flex; justify-content: space-around; }
         .nav-item-custom { text-align: center; color: #95a5a6; font-size: 0.8rem; cursor: pointer; width: 100%; }
         .nav-item-custom.active { color: var(--primary-color); font-weight: bold; }
         .nav-item-custom i { font-size: 1.4rem; display: block; margin-bottom: 2px; }
 
-        /* Утилиты */
         .hidden { display: none !important; }
         #loadingOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.9); z-index: 2000; display: flex; justify-content: center; align-items: center; }
         .btn-float { position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4); z-index: 999; }
@@ -79,10 +78,8 @@
                     <button class="btn btn-outline-danger btn-sm" onclick="app.deleteAccount()">Удалить аккаунт</button>
                 </div>
             </div>
-
             <h5 class="mb-3">Мои объявления</h5>
-            <div class="row g-3" id="myProductsGrid">
-            </div>
+            <div class="row g-3" id="myProductsGrid"></div>
         </div>
 
         <div id="viewCreate" class="view-section hidden">
@@ -96,7 +93,7 @@
                     <div class="mb-3">
                         <label>Фото</label>
                         <input type="file" class="form-control" id="prodImg" accept="image/*">
-                        <small class="text-muted" id="imgHelp">Оставьте пустым, если не хотите менять фото (при редактировании)</small>
+                        <small class="text-muted" id="imgHelp">Оставьте пустым, если не хотите менять фото</small>
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-success" id="saveBtn">Опубликовать</button>
@@ -130,9 +127,15 @@
         </div>
 
         <div id="viewChatRoom" class="view-section hidden">
-            <div class="d-flex align-items-center mb-2">
-                <button class="btn btn-sm btn-light me-2" onclick="app.nav('viewChats')"><i class="bi bi-chevron-left"></i></button>
-                <div class="fw-bold flex-grow-1 text-truncate" id="chatRoomTitle">Чат</div>
+            <div class="d-flex align-items-center mb-2 gap-2">
+                <button class="btn btn-sm btn-light" onclick="app.nav('viewChats')"><i class="bi bi-chevron-left"></i></button>
+                <div class="chat-avatar bg-success text-white" style="width:35px; height:35px; font-size:16px;">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="flex-grow-1 overflow-hidden">
+                    <div class="fw-bold text-truncate" id="chatHeaderName">Имя</div>
+                    <div class="small text-muted text-truncate" id="chatHeaderProduct">Товар</div>
+                </div>
             </div>
             
             <div id="messagesBox" class="chat-window mb-2"></div>
@@ -154,15 +157,9 @@
     </button>
 
     <div class="bottom-nav hidden" id="bottomNav">
-        <div class="nav-item-custom active" onclick="app.nav('viewFeed')" id="navFeed">
-            <i class="bi bi-house-door"></i> Лента
-        </div>
-        <div class="nav-item-custom" onclick="app.nav('viewChats')" id="navChats">
-            <i class="bi bi-chat-dots"></i> Чаты
-        </div>
-        <div class="nav-item-custom" onclick="app.nav('viewProfile')" id="navProfile">
-            <i class="bi bi-person-circle"></i> Профиль
-        </div>
+        <div class="nav-item-custom active" onclick="app.nav('viewFeed')" id="navFeed"><i class="bi bi-house-door"></i> Лента</div>
+        <div class="nav-item-custom" onclick="app.nav('viewChats')" id="navChats"><i class="bi bi-chat-dots"></i> Чаты</div>
+        <div class="nav-item-custom" onclick="app.nav('viewProfile')" id="navProfile"><i class="bi bi-person-circle"></i> Профиль</div>
     </div>
 
     <div id="loadingOverlay" class="hidden"><div class="spinner-border text-success" role="status"></div></div>
@@ -191,7 +188,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
-        // --- КОНФИГУРАЦИЯ FIREBASE (ВАШИ КЛЮЧИ) ---
+        // ВСТАВЬТЕ СЮДА ВАШИ КЛЮЧИ, ЕСЛИ ОНИ СЛЕТЕЛИ
         const firebaseConfig = {
           apiKey: "AIzaSyDvV4-QJZPc2RyODuOQpg44hvUcspD_XqE",
           authDomain: "super-market-2025.firebaseapp.com",
@@ -200,20 +197,16 @@
           messagingSenderId: "757873908830",
           appId: "1:757873908830:web:dedfaf2b85e3c02029a8cf"
         };
-        // ---------------------------------------------
 
-        // Глобальные переменные для модального окна
         let modalInstance = null;
         function openAuthModal() { modalInstance = new bootstrap.Modal(document.getElementById('authModal')); modalInstance.show(); }
         function closeAuthModal() { if(modalInstance) modalInstance.hide(); }
 
-        // Инициализация
         try {
             firebase.initializeApp(firebaseConfig);
             const auth = firebase.auth();
             const db = firebase.firestore();
 
-            // ОБЪЕКТ APP ОБЪЯВЛЯЕМ ЧЕРЕЗ WINDOW, ЧТОБЫ ЕГО ВИДЕЛИ КНОПКИ В HTML
             window.app = {
                 user: null,
                 activeChatId: null,
@@ -229,11 +222,8 @@
                             this.loadChatsList();
                             if(document.getElementById('viewProfile').classList.contains('hidden') === false) this.loadMyProducts();
                         } else {
-                            if(!document.getElementById('viewDetail').classList.contains('hidden')){
-                                // Если пользователь на деталях, не выкидываем его
-                            } else {
-                                this.nav('viewFeed');
-                            }
+                             if(!document.getElementById('viewDetail').classList.contains('hidden')){}
+                             else this.nav('viewFeed');
                         }
                     });
                     this.loadFeed();
@@ -259,7 +249,6 @@
                     const fab = document.getElementById('fabBtn');
                     const isFeed = !document.getElementById('viewFeed').classList.contains('hidden');
                     const isProfile = !document.getElementById('viewProfile').classList.contains('hidden');
-                    
                     if(this.user && (isFeed || isProfile)) fab.classList.remove('hidden');
                     else fab.classList.add('hidden');
                 },
@@ -267,23 +256,14 @@
                 nav: function(viewId) {
                     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
                     document.getElementById(viewId).classList.remove('hidden');
-                    
                     document.querySelectorAll('.nav-item-custom').forEach(el => el.classList.remove('active'));
                     
-                    if(viewId === 'viewFeed') {
-                        document.getElementById('navFeed').classList.add('active');
-                        this.loadFeed();
-                    }
+                    if(viewId === 'viewFeed') { document.getElementById('navFeed').classList.add('active'); this.loadFeed(); }
                     if(viewId === 'viewChats') document.getElementById('navChats').classList.add('active');
-                    if(viewId === 'viewProfile') {
-                        document.getElementById('navProfile').classList.add('active');
-                        this.loadMyProducts();
-                    }
-                    
+                    if(viewId === 'viewProfile') { document.getElementById('navProfile').classList.add('active'); this.loadMyProducts(); }
                     this.checkFabVisibility();
                 },
 
-                // --- АВТОРИЗАЦИЯ ---
                 login: async function(e) { e.preventDefault(); try { await auth.signInWithEmailAndPassword(document.getElementById('lEmail').value, document.getElementById('lPass').value); closeAuthModal(); } catch(err){ alert(err.message); } },
                 register: async function(e) { 
                     e.preventDefault(); 
@@ -296,16 +276,14 @@
                 },
                 logout: () => auth.signOut(),
                 deleteAccount: async function() {
-                    if(!confirm("Точно удалить аккаунт? Это необратимо.")) return;
-                    try { await this.user.delete(); alert("Аккаунт удален"); window.location.reload(); }
-                    catch(e) { alert("Ошибка! Нужно перезайти в аккаунт, чтобы удалить его."); }
+                    if(!confirm("Точно удалить аккаунт?")) return;
+                    try { await this.user.delete(); window.location.reload(); } catch(e) { alert("Ошибка удаления"); }
                 },
                 editProfileName: async function() {
-                    const newName = prompt("Введите новое имя:", this.user.displayName);
+                    const newName = prompt("Новое имя:", this.user.displayName);
                     if(newName) { await this.user.updateProfile({displayName: newName}); this.updateUI(); }
                 },
 
-                // --- ТОВАРЫ ---
                 openCreateMode: function() {
                     document.getElementById('createPageTitle').innerText = "Новое объявление";
                     document.getElementById('saveBtn').innerText = "Опубликовать";
@@ -331,11 +309,10 @@
                     this.loader(true);
                     const editId = document.getElementById('editProductId').value;
                     const file = document.getElementById('prodImg').files[0];
-                    
                     try {
                         let imageUrl = null;
                         if(file) imageUrl = await this.compress(file);
-                        else if(editId && this.currentProduct) imageUrl = this.currentProduct.imageUrl; 
+                        else if(editId && this.currentProduct) imageUrl = this.currentProduct.imageUrl;
 
                         const data = {
                             title: document.getElementById('prodTitle').value,
@@ -360,10 +337,7 @@
                 },
 
                 deleteProduct: async function(id) {
-                    if(confirm("Удалить объявление?")) {
-                        await db.collection('products').doc(id).delete();
-                        this.loadMyProducts();
-                    }
+                    if(confirm("Удалить?")) { await db.collection('products').doc(id).delete(); this.loadMyProducts(); }
                 },
 
                 loadFeed: function() {
@@ -377,7 +351,7 @@
                     if(!this.user) return;
                     db.collection('products').where('sellerId', '==', this.user.uid).get().then(snap => {
                         const grid = document.getElementById('myProductsGrid'); grid.innerHTML = '';
-                        if(snap.empty) grid.innerHTML = '<div class="text-muted text-center p-3">Вы еще ничего не продаете</div>';
+                        if(snap.empty) grid.innerHTML = '<div class="text-muted text-center p-3">Нет объявлений</div>';
                         snap.forEach(doc => {
                             const d = doc.data();
                             const safe = JSON.stringify(d).replace(/"/g, '&quot;');
@@ -405,11 +379,9 @@
                     document.getElementById('detailPrice').innerText = data.price + ' ₽';
                     document.getElementById('detailDesc').innerText = data.description;
                     document.getElementById('detailSeller').innerText = data.sellerName;
-                    
                     const btn = document.getElementById('btnWriteSeller');
                     if(this.user && data.sellerId === this.user.uid) btn.classList.add('hidden');
                     else btn.classList.remove('hidden');
-
                     this.nav('viewDetail');
                 },
 
@@ -426,30 +398,32 @@
                     </div>`;
                 },
 
-                // --- ЧАТЫ (ИСПРАВЛЕНО) ---
+                // --- ЧАТЫ (С ИМЕНАМИ) ---
                 startChat: async function() {
                     if(!this.user) return openAuthModal();
                     const prod = this.currentProduct;
                     const chatId = [this.user.uid, prod.sellerId, prod.id].sort().join('_');
                     
                     const chatRef = db.collection('chats').doc(chatId);
-                    const doc = await chatRef.get();
                     
-                    if(!doc.exists) {
-                        await chatRef.set({
-                            users: [this.user.uid, prod.sellerId],
-                            productTitle: prod.title,
-                            lastMessage: '',
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                    this.openChatRoom(chatId, prod.title);
+                    // Обновляем данные чата (или создаем), чтобы записать ИМЕНА
+                    await chatRef.set({
+                        users: [this.user.uid, prod.sellerId],
+                        // Сохраняем карту имен: ID -> Имя
+                        userNames: {
+                            [this.user.uid]: this.user.displayName || "Я",
+                            [prod.sellerId]: prod.sellerName || "Продавец"
+                        },
+                        productTitle: prod.title,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true }); // merge: true чтобы не стереть старые сообщения если что
+
+                    // Сразу переходим, имя собеседника - это имя продавца
+                    this.openChatRoom(chatId, prod.sellerName, prod.title);
                 },
 
                 loadChatsList: function() {
                     if(this.unsubscribeChats) this.unsubscribeChats();
-                    // ВАЖНОЕ ИСПРАВЛЕНИЕ: Убрали orderBy('updatedAt') из запроса, 
-                    // чтобы не возникала ошибка индекса. Сортируем в JS.
                     this.unsubscribeChats = db.collection('chats')
                         .where('users', 'array-contains', this.user.uid)
                         .onSnapshot(snap => {
@@ -457,30 +431,39 @@
                             list.innerHTML = '';
                             document.getElementById('emptyChats').classList.toggle('hidden', !snap.empty);
                             
-                            // Превращаем в массив для сортировки
                             let chats = [];
                             snap.forEach(doc => chats.push({ id: doc.id, ...doc.data() }));
-                            
-                            // Сортируем вручную (новые сверху)
-                            chats.sort((a, b) => {
-                                const tA = a.updatedAt ? a.updatedAt.seconds : 0;
-                                const tB = b.updatedAt ? b.updatedAt.seconds : 0;
-                                return tB - tA;
-                            });
+                            chats.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
 
                             chats.forEach(d => {
+                                // Ищем ID собеседника (того, кто не я)
+                                const otherId = d.users.find(u => u !== this.user.uid);
+                                // Пробуем достать имя из карты имен, если нет - пишем "Собеседник"
+                                let otherName = (d.userNames && d.userNames[otherId]) ? d.userNames[otherId] : "Собеседник";
+                                
                                 list.innerHTML += `
-                                    <div class="p-3 bg-white border rounded shadow-sm chat-list-item" onclick="app.openChatRoom('${d.id}', '${d.productTitle}')">
-                                        <div class="fw-bold text-success">${d.productTitle}</div>
-                                        <div class="small text-muted text-truncate">${d.lastMessage || 'Начните общение'}</div>
+                                    <div class="p-3 bg-white border rounded shadow-sm chat-list-item d-flex align-items-center gap-3" 
+                                         onclick="app.openChatRoom('${d.id}', '${otherName}', '${d.productTitle}')">
+                                        <div class="chat-avatar"><i class="bi bi-person-fill"></i></div>
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="fw-bold text-truncate">${otherName}</div>
+                                                <small class="text-muted ms-2" style="font-size: 0.75rem;">${new Date((d.updatedAt?.seconds || 0)*1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                                            </div>
+                                            <div class="small text-success text-truncate mb-1">${d.productTitle}</div>
+                                            <div class="small text-muted text-truncate">${d.lastMessage || 'Начните общение'}</div>
+                                        </div>
                                     </div>`;
                             });
                         });
                 },
 
-                openChatRoom: function(chatId, title) {
+                openChatRoom: function(chatId, userName, prodTitle) {
                     this.activeChatId = chatId;
-                    document.getElementById('chatRoomTitle').innerText = title;
+                    // Обновляем заголовок чата
+                    document.getElementById('chatHeaderName').innerText = userName;
+                    document.getElementById('chatHeaderProduct').innerText = prodTitle;
+                    
                     this.nav('viewChatRoom');
                     this.loadMessages(chatId);
                 },
@@ -529,16 +512,12 @@
                 },
 
                 pushMessage: async function(msgData) {
-                    const payload = {
-                        ...msgData,
-                        uid: this.user.uid,
-                        ts: firebase.firestore.FieldValue.serverTimestamp()
-                    };
+                    const payload = { ...msgData, uid: this.user.uid, ts: firebase.firestore.FieldValue.serverTimestamp() };
                     await db.collection('chats').doc(this.activeChatId).collection('messages').add(payload);
                     await db.collection('chats').doc(this.activeChatId).update({
                         lastMessage: msgData.text || 'Фото',
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    }, {merge: true});
                 },
 
                 compress: function(file) {
@@ -559,13 +538,8 @@
                 loader: function(show) { document.getElementById('loadingOverlay').classList.toggle('hidden', !show); }
             };
 
-            // Запуск приложения
             document.addEventListener('DOMContentLoaded', () => window.app.init());
-
-        } catch(e) { 
-            console.error(e);
-            alert("Ошибка запуска: " + e.message); 
-        }
+        } catch(e) { console.error(e); alert("Ошибка: " + e.message); }
     </script>
 </body>
 </html>
