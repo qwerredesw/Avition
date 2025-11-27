@@ -26,7 +26,7 @@
         .msg-other { background: white; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .msg-img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
         
-        /* Навигация снизу (как в приложении) */
+        /* Навигация снизу */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; padding: 10px 0; display: flex; justify-content: space-around; }
         .nav-item-custom { text-align: center; color: #95a5a6; font-size: 0.8rem; cursor: pointer; width: 100%; }
         .nav-item-custom.active { color: var(--primary-color); font-weight: bold; }
@@ -193,12 +193,12 @@
     <script>
         // --- КОНФИГУРАЦИЯ FIREBASE (ВАШИ КЛЮЧИ) ---
         const firebaseConfig = {
-            apiKey: "AIzaSyDvV4-QJZPc2RyODuOQpg44hvUcspD_XqE",
-            authDomain: "super-market-2025.firebaseapp.com",
-            projectId: "super-market-2025",
-            storageBucket: "super-market-2025.firebasestorage.app",
-            messagingSenderId: "757873908830",
-            appId: "1:757873908830:web:dedfaf2b85e3c02029a8cf"
+          apiKey: "AIzaSyDvV4-QJZPc2RyODuOQpg44hvUcspD_XqE",
+          authDomain: "super-market-2025.firebaseapp.com",
+          projectId: "super-market-2025",
+          storageBucket: "super-market-2025.firebasestorage.app",
+          messagingSenderId: "757873908830",
+          appId: "1:757873908830:web:dedfaf2b85e3c02029a8cf"
         };
         // ---------------------------------------------
 
@@ -242,15 +242,10 @@
                 updateUI: function() {
                     const nav = document.getElementById('bottomNav');
                     const authBtn = document.getElementById('authBtnGroup');
-                    const fab = document.getElementById('fabBtn');
-
+                    
                     if(this.user) {
                         nav.classList.remove('hidden');
                         authBtn.classList.add('hidden');
-                        if(!document.getElementById('viewChats').classList.contains('hidden') === false) {
-                            // Логика показа кнопки +
-                        }
-                        // Заполняем профиль
                         document.getElementById('profileName').innerText = this.user.displayName || "Пользователь";
                         document.getElementById('profileEmail').innerText = this.user.email;
                     } else {
@@ -340,7 +335,7 @@
                     try {
                         let imageUrl = null;
                         if(file) imageUrl = await this.compress(file);
-                        else if(editId && this.currentProduct) imageUrl = this.currentProduct.imageUrl; // Если редактируем и нет нового фото
+                        else if(editId && this.currentProduct) imageUrl = this.currentProduct.imageUrl; 
 
                         const data = {
                             title: document.getElementById('prodTitle').value,
@@ -431,7 +426,7 @@
                     </div>`;
                 },
 
-                // --- ЧАТЫ ---
+                // --- ЧАТЫ (ИСПРАВЛЕНО) ---
                 startChat: async function() {
                     if(!this.user) return openAuthModal();
                     const prod = this.currentProduct;
@@ -453,18 +448,29 @@
 
                 loadChatsList: function() {
                     if(this.unsubscribeChats) this.unsubscribeChats();
+                    // ВАЖНОЕ ИСПРАВЛЕНИЕ: Убрали orderBy('updatedAt') из запроса, 
+                    // чтобы не возникала ошибка индекса. Сортируем в JS.
                     this.unsubscribeChats = db.collection('chats')
                         .where('users', 'array-contains', this.user.uid)
-                        .orderBy('updatedAt', 'desc')
                         .onSnapshot(snap => {
                             const list = document.getElementById('chatList');
                             list.innerHTML = '';
                             document.getElementById('emptyChats').classList.toggle('hidden', !snap.empty);
                             
-                            snap.forEach(doc => {
-                                const d = doc.data();
+                            // Превращаем в массив для сортировки
+                            let chats = [];
+                            snap.forEach(doc => chats.push({ id: doc.id, ...doc.data() }));
+                            
+                            // Сортируем вручную (новые сверху)
+                            chats.sort((a, b) => {
+                                const tA = a.updatedAt ? a.updatedAt.seconds : 0;
+                                const tB = b.updatedAt ? b.updatedAt.seconds : 0;
+                                return tB - tA;
+                            });
+
+                            chats.forEach(d => {
                                 list.innerHTML += `
-                                    <div class="p-3 bg-white border rounded shadow-sm chat-list-item" onclick="app.openChatRoom('${doc.id}', '${d.productTitle}')">
+                                    <div class="p-3 bg-white border rounded shadow-sm chat-list-item" onclick="app.openChatRoom('${d.id}', '${d.productTitle}')">
                                         <div class="fw-bold text-success">${d.productTitle}</div>
                                         <div class="small text-muted text-truncate">${d.lastMessage || 'Начните общение'}</div>
                                     </div>`;
