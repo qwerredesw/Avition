@@ -82,7 +82,7 @@
 
             <h5 class="mb-3">Мои объявления</h5>
             <div class="row g-3" id="myProductsGrid">
-                </div>
+            </div>
         </div>
 
         <div id="viewCreate" class="view-section hidden">
@@ -191,29 +191,30 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
-        // ==========================================
-        //  ВСТАВЬ СЮДА СВОИ КЛЮЧИ! 
-        // ==========================================
+        // --- КОНФИГУРАЦИЯ FIREBASE (ВАШИ КЛЮЧИ) ---
         const firebaseConfig = {
-            apiKey: "ВСТАВЬ_API_KEY",
-            authDomain: "...",
-            projectId: "...",
-            storageBucket: "...",
-            messagingSenderId: "...",
-            appId: "..."
+            apiKey: "AIzaSyDvV4-QJZPc2RyODuOQpg44hvUcspD_XqE",
+            authDomain: "super-market-2025.firebaseapp.com",
+            projectId: "super-market-2025",
+            storageBucket: "super-market-2025.firebasestorage.app",
+            messagingSenderId: "757873908830",
+            appId: "1:757873908830:web:dedfaf2b85e3c02029a8cf"
         };
-        // ==========================================
+        // ---------------------------------------------
 
+        // Глобальные переменные для модального окна
         let modalInstance = null;
         function openAuthModal() { modalInstance = new bootstrap.Modal(document.getElementById('authModal')); modalInstance.show(); }
         function closeAuthModal() { if(modalInstance) modalInstance.hide(); }
 
+        // Инициализация
         try {
             firebase.initializeApp(firebaseConfig);
             const auth = firebase.auth();
             const db = firebase.firestore();
 
-            const app = {
+            // ОБЪЕКТ APP ОБЪЯВЛЯЕМ ЧЕРЕЗ WINDOW, ЧТОБЫ ЕГО ВИДЕЛИ КНОПКИ В HTML
+            window.app = {
                 user: null,
                 activeChatId: null,
                 currentProduct: null,
@@ -225,10 +226,14 @@
                         this.user = u;
                         this.updateUI();
                         if(u) {
-                            this.loadChatsList(); // Грузим список чатов
+                            this.loadChatsList();
                             if(document.getElementById('viewProfile').classList.contains('hidden') === false) this.loadMyProducts();
                         } else {
-                            this.nav('viewFeed');
+                            if(!document.getElementById('viewDetail').classList.contains('hidden')){
+                                // Если пользователь на деталях, не выкидываем его
+                            } else {
+                                this.nav('viewFeed');
+                            }
                         }
                     });
                     this.loadFeed();
@@ -242,23 +247,32 @@
                     if(this.user) {
                         nav.classList.remove('hidden');
                         authBtn.classList.add('hidden');
-                        fab.classList.remove('hidden');
+                        if(!document.getElementById('viewChats').classList.contains('hidden') === false) {
+                            // Логика показа кнопки +
+                        }
                         // Заполняем профиль
                         document.getElementById('profileName').innerText = this.user.displayName || "Пользователь";
                         document.getElementById('profileEmail').innerText = this.user.email;
                     } else {
                         nav.classList.add('hidden');
                         authBtn.classList.remove('hidden');
-                        fab.classList.add('hidden');
                     }
+                    this.checkFabVisibility();
+                },
+
+                checkFabVisibility: function() {
+                    const fab = document.getElementById('fabBtn');
+                    const isFeed = !document.getElementById('viewFeed').classList.contains('hidden');
+                    const isProfile = !document.getElementById('viewProfile').classList.contains('hidden');
+                    
+                    if(this.user && (isFeed || isProfile)) fab.classList.remove('hidden');
+                    else fab.classList.add('hidden');
                 },
 
                 nav: function(viewId) {
-                    // Скрываем всё
                     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-                    // Показываем нужное
                     document.getElementById(viewId).classList.remove('hidden');
-                    // Обновляем иконки внизу
+                    
                     document.querySelectorAll('.nav-item-custom').forEach(el => el.classList.remove('active'));
                     
                     if(viewId === 'viewFeed') {
@@ -271,10 +285,7 @@
                         this.loadMyProducts();
                     }
                     
-                    // Управление кнопкой Плюс
-                    const fab = document.getElementById('fabBtn');
-                    if(this.user && (viewId === 'viewFeed' || viewId === 'viewProfile')) fab.classList.remove('hidden');
-                    else fab.classList.add('hidden');
+                    this.checkFabVisibility();
                 },
 
                 // --- АВТОРИЗАЦИЯ ---
@@ -304,7 +315,7 @@
                     document.getElementById('createPageTitle').innerText = "Новое объявление";
                     document.getElementById('saveBtn').innerText = "Опубликовать";
                     document.getElementById('editProductId').value = "";
-                    document.querySelector('form').reset();
+                    document.querySelector('#viewCreate form').reset();
                     document.getElementById('imgHelp').classList.add('hidden');
                     this.nav('viewCreate');
                 },
@@ -329,6 +340,7 @@
                     try {
                         let imageUrl = null;
                         if(file) imageUrl = await this.compress(file);
+                        else if(editId && this.currentProduct) imageUrl = this.currentProduct.imageUrl; // Если редактируем и нет нового фото
 
                         const data = {
                             title: document.getElementById('prodTitle').value,
@@ -339,13 +351,11 @@
                         if(imageUrl) data.imageUrl = imageUrl;
 
                         if(editId) {
-                            // Редактирование
                             await db.collection('products').doc(editId).update(data);
                         } else {
-                            // Создание
                             if(!imageUrl) throw new Error("Фото обязательно!");
                             data.sellerId = this.user.uid;
-                            data.sellerName = this.user.displayName;
+                            data.sellerName = this.user.displayName || "Продавец";
                             data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                             await db.collection('products').add(data);
                         }
@@ -369,6 +379,7 @@
                 },
 
                 loadMyProducts: function() {
+                    if(!this.user) return;
                     db.collection('products').where('sellerId', '==', this.user.uid).get().then(snap => {
                         const grid = document.getElementById('myProductsGrid'); grid.innerHTML = '';
                         if(snap.empty) grid.innerHTML = '<div class="text-muted text-center p-3">Вы еще ничего не продаете</div>';
@@ -401,7 +412,7 @@
                     document.getElementById('detailSeller').innerText = data.sellerName;
                     
                     const btn = document.getElementById('btnWriteSeller');
-                    if(this.user && data.sellerId === this.user.uid) btn.classList.add('hidden'); // Не писать самому себе
+                    if(this.user && data.sellerId === this.user.uid) btn.classList.add('hidden');
                     else btn.classList.remove('hidden');
 
                     this.nav('viewDetail');
@@ -420,14 +431,12 @@
                     </div>`;
                 },
 
-                // --- ЧАТЫ (НОВАЯ СИСТЕМА) ---
-                
+                // --- ЧАТЫ ---
                 startChat: async function() {
                     if(!this.user) return openAuthModal();
                     const prod = this.currentProduct;
-                    const chatId = [this.user.uid, prod.sellerId, prod.id].sort().join('_'); // Уникальный ID чата
+                    const chatId = [this.user.uid, prod.sellerId, prod.id].sort().join('_');
                     
-                    // Проверяем или создаем чат
                     const chatRef = db.collection('chats').doc(chatId);
                     const doc = await chatRef.get();
                     
@@ -435,6 +444,7 @@
                         await chatRef.set({
                             users: [this.user.uid, prod.sellerId],
                             productTitle: prod.title,
+                            lastMessage: '',
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     }
@@ -518,16 +528,13 @@
                         uid: this.user.uid,
                         ts: firebase.firestore.FieldValue.serverTimestamp()
                     };
-                    // 1. Добавить сообщение
                     await db.collection('chats').doc(this.activeChatId).collection('messages').add(payload);
-                    // 2. Обновить чат (чтобы он поднялся вверх в списке)
                     await db.collection('chats').doc(this.activeChatId).update({
                         lastMessage: msgData.text || 'Фото',
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 },
 
-                // Утилиты
                 compress: function(file) {
                     return new Promise(r => {
                         const reader = new FileReader(); reader.readAsDataURL(file);
@@ -546,9 +553,13 @@
                 loader: function(show) { document.getElementById('loadingOverlay').classList.toggle('hidden', !show); }
             };
 
-            document.addEventListener('DOMContentLoaded', () => app.init());
+            // Запуск приложения
+            document.addEventListener('DOMContentLoaded', () => window.app.init());
 
-        } catch(e) { alert("Start Error: " + e.message); }
+        } catch(e) { 
+            console.error(e);
+            alert("Ошибка запуска: " + e.message); 
+        }
     </script>
 </body>
 </html>
