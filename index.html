@@ -31,18 +31,15 @@
         .nav-item-custom.active { color: var(--primary-color); font-weight: bold; }
         .nav-item-custom i { font-size: 1.4rem; display: block; margin-bottom: 2px; }
 
-        /* Метка сообщений */
         .nav-badge { position: absolute; top: 4px; right: 25%; background: #e74c3c; color: white; border-radius: 50%; min-width: 18px; height: 18px; padding: 0 4px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
 
-        /* ГАЛЕРЕЯ ФОТО */
+        /* ГАЛЕРЕЯ */
         .gallery-container { position: relative; width: 100%; height: 400px; background: #000; border-radius: 12px; overflow: hidden; }
         .gallery-img { width: 100%; height: 100%; object-fit: contain; }
-        
         .gallery-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: 0.2s; }
         .gallery-btn:hover { background: rgba(0,0,0,0.8); }
         .gallery-btn.prev { left: 10px; }
         .gallery-btn.next { right: 10px; }
-        
         .gallery-counter { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; z-index: 10; }
 
         .hidden { display: none !important; }
@@ -105,7 +102,7 @@
                     <div class="mb-3"><label>Цена (₽)</label><input type="number" class="form-control" id="prodPrice" required></div>
                     <div class="mb-3"><label>Описание</label><textarea class="form-control" id="prodDesc" rows="4" required></textarea></div>
                     <div class="mb-3">
-                        <label>Фото (можно выбрать несколько)</label>
+                        <label>Фото (можно несколько)</label>
                         <input type="file" class="form-control" id="prodImg" accept="image/*" multiple>
                         <small class="text-muted" id="imgHelp">Оставьте пустым, если не хотите менять фото</small>
                     </div>
@@ -124,7 +121,6 @@
                     
                     <div class="gallery-container shadow-sm">
                         <img id="detailImg" src="" class="gallery-img">
-                        
                         <button class="gallery-btn prev hidden" id="btnPrevImg" onclick="app.slideGallery(-1)"><i class="bi bi-chevron-left"></i></button>
                         <button class="gallery-btn next hidden" id="btnNextImg" onclick="app.slideGallery(1)"><i class="bi bi-chevron-right"></i></button>
                         <div class="gallery-counter hidden" id="galleryCounter">1/1</div>
@@ -133,7 +129,7 @@
                 </div>
                 <div class="col-md-6">
                     <h2 id="detailTitle" class="fw-bold mt-3"></h2>
-                    <h3 class="text-success mb-3" id="detailPrice"></h3>
+                    <h3 class="text-success mb-3 fw-bold" id="detailPrice" style="font-size: 2rem;"></h3>
                     
                     <div id="ownerControls" class="card p-2 mb-3 border-danger hidden" style="border-style: dashed;">
                         <div class="d-flex gap-2">
@@ -247,7 +243,6 @@
                 unsubscribeChats: null,
                 unsubscribeMessages: null,
                 
-                // Для галереи
                 galleryImages: [],
                 galleryIndex: 0,
 
@@ -264,6 +259,11 @@
                         }
                     });
                     this.loadFeed();
+                },
+
+                // ФУНКЦИЯ ДЛЯ КРАСИВОЙ ЦЕНЫ С ПРОБЕЛАМИ
+                formatPrice: function(price) {
+                    return new Intl.NumberFormat('ru-RU').format(price);
                 },
 
                 updateUI: function() {
@@ -351,20 +351,16 @@
                     e.preventDefault();
                     this.loader(true);
                     const editId = document.getElementById('editProductId').value;
-                    // БЕРЕМ ВСЕ ФАЙЛЫ
                     const files = document.getElementById('prodImg').files; 
                     
                     try {
                         let imageUrls = [];
-                        
-                        // Если выбрали новые файлы - грузим их все
                         if(files.length > 0) {
                             for(let i=0; i<files.length; i++) {
                                 const url = await this.compress(files[i]);
                                 imageUrls.push(url);
                             }
                         } else if(editId && this.currentProduct) {
-                            // Если редактируем и не меняли фото - оставляем старые
                             imageUrls = this.currentProduct.images || [this.currentProduct.imageUrl];
                         }
 
@@ -373,7 +369,6 @@
                             price: Number(document.getElementById('prodPrice').value),
                             description: document.getElementById('prodDesc').value,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            // Сохраняем массив фото. Первое фото также дублируем в imageUrl для совместимости
                             images: imageUrls,
                             imageUrl: imageUrls[0]
                         };
@@ -435,17 +430,18 @@
                     });
                 },
 
-                // --- ЛОГИКА ГАЛЕРЕИ ---
                 showDetail: function(id, data) {
                     this.currentProduct = { id, ...data };
                     
-                    // Обработка фото: берем массив или создаем его из одной картинки
                     this.galleryImages = data.images || [data.imageUrl];
                     this.galleryIndex = 0;
                     this.updateGalleryView();
 
                     document.getElementById('detailTitle').innerText = data.title;
-                    document.getElementById('detailPrice').innerText = data.price + ' ₽';
+                    
+                    // ФОРМАТИРОВАНИЕ ЦЕНЫ
+                    document.getElementById('detailPrice').innerText = this.formatPrice(data.price) + ' ₽';
+                    
                     document.getElementById('detailDesc').innerText = data.description;
                     document.getElementById('detailSeller').innerText = data.sellerName;
                     
@@ -472,10 +468,8 @@
                     const nextBtn = document.getElementById('btnNextImg');
                     const counter = document.getElementById('galleryCounter');
 
-                    // Ставим текущее фото
                     img.src = this.galleryImages[this.galleryIndex];
 
-                    // Показываем/скрываем элементы управления если фото > 1
                     if(this.galleryImages.length > 1) {
                         prevBtn.classList.remove('hidden');
                         nextBtn.classList.remove('hidden');
@@ -490,24 +484,22 @@
 
                 slideGallery: function(step) {
                     const newIndex = this.galleryIndex + step;
-                    // Проверка границ
                     if(newIndex >= 0 && newIndex < this.galleryImages.length) {
                         this.galleryIndex = newIndex;
                         this.updateGalleryView();
                     }
                 },
-                // ----------------------
 
                 renderCard: function(id, d) {
                     const safe = JSON.stringify(d).replace(/"/g, '&quot;');
-                    // В ленте всегда показываем первую картинку
                     const thumb = (d.images && d.images.length > 0) ? d.images[0] : d.imageUrl;
                     
+                    // ФОРМАТИРОВАНИЕ ЦЕНЫ В ЛЕНТЕ
                     return `<div class="col-6 col-md-4 col-lg-3">
                         <div class="product-card h-100" onclick='app.showDetail("${id}", ${safe})'>
                             <img src="${thumb}" class="product-img">
                             <div class="p-3">
-                                <h5 class="fw-bold mb-1">${d.price} ₽</h5>
+                                <h5 class="fw-bold mb-1">${this.formatPrice(d.price)} ₽</h5>
                                 <div class="text-truncate">${d.title}</div>
                             </div>
                         </div>
