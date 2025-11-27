@@ -53,22 +53,10 @@
                     <div class="card shadow-sm border-0 p-4">
                         <h4 class="mb-3">Новое объявление</h4>
                         <form onsubmit="app.createProduct(event)">
-                            <div class="mb-3">
-                                <label>Название</label>
-                                <input type="text" class="form-control" id="prodTitle" required>
-                            </div>
-                            <div class="mb-3">
-                                <label>Цена (₽)</label>
-                                <input type="number" class="form-control" id="prodPrice" required>
-                            </div>
-                            <div class="mb-3">
-                                <label>Описание</label>
-                                <textarea class="form-control" id="prodDesc" rows="3" required></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label>Фото</label>
-                                <input type="file" class="form-control" id="prodImg" accept="image/*" required>
-                            </div>
+                            <div class="mb-3"><label>Название</label><input type="text" class="form-control" id="prodTitle" required></div>
+                            <div class="mb-3"><label>Цена (₽)</label><input type="number" class="form-control" id="prodPrice" required></div>
+                            <div class="mb-3"><label>Описание</label><textarea class="form-control" id="prodDesc" rows="3" required></textarea></div>
+                            <div class="mb-3"><label>Фото</label><input type="file" class="form-control" id="prodImg" accept="image/*" required></div>
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-success">Опубликовать</button>
                                 <button type="button" class="btn btn-light" onclick="app.showFeed()">Отмена</button>
@@ -100,9 +88,7 @@
                                     <button class="btn btn-success" onclick="app.sendMessage()"><i class="bi bi-send"></i></button>
                                 </div>
                             </div>
-                            <div id="loginToChat" class="text-center py-3 hidden">
-                                <small>Войдите, чтобы написать продавцу</small>
-                            </div>
+                            <div id="loginToChat" class="text-center py-3 hidden"><small>Войдите, чтобы написать</small></div>
                         </div>
                     </div>
                 </div>
@@ -110,31 +96,15 @@
         </div>
     </div>
 
-    <button id="fabBtn" class="btn btn-success fab-btn hidden" onclick="app.showCreate()">
-        <i class="bi bi-plus-lg"></i>
-    </button>
+    <button id="fabBtn" class="btn btn-success fab-btn hidden" onclick="app.showCreate()"><i class="bi bi-plus-lg"></i></button>
+    <div id="loadingOverlay" class="hidden"><div class="spinner-border text-success" role="status"></div></div>
 
-    <div id="loadingOverlay" class="hidden">
-        <div class="spinner-border text-success" role="status"></div>
-    </div>
-
-    <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="authModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title">Вход в Avition</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header border-0"><h5 class="modal-title">Вход в Avition</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <ul class="nav nav-pills nav-fill mb-3" id="authTabs" role="tablist">
-                        <li class="nav-item">
-                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#loginTab">Вход</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#regTab">Регистрация</button>
-                        </li>
-                    </ul>
-                    
+                    <ul class="nav nav-pills nav-fill mb-3"><li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#loginTab">Вход</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#regTab">Регистрация</button></li></ul>
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="loginTab">
                             <form onsubmit="app.handleLogin(event)">
@@ -147,7 +117,8 @@
                             <form onsubmit="app.handleRegister(event)">
                                 <div class="mb-3"><input type="text" class="form-control" id="regName" placeholder="Ваше имя" required></div>
                                 <div class="mb-3"><input type="email" class="form-control" id="regEmail" placeholder="Email" required></div>
-                                <div class="mb-3"><input type="password" class="form-control" id="regPass" placeholder="Придумайте пароль (мин. 6 симв.)" required minlength="6"></div>
+                                <div class="mb-3"><input type="password" class="form-control" id="regPass" placeholder="Пароль (мин. 6 симв.)" required minlength="6"></div>
+                                <div class="mb-3"><input type="password" class="form-control" id="regPassConfirm" placeholder="Повторите пароль" required minlength="6"></div>
                                 <button type="submit" class="btn btn-success w-100">Зарегистрироваться</button>
                             </form>
                         </div>
@@ -160,30 +131,25 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // ==========================================
-        // НАСТРОЙКИ (Я УЖЕ ВСТАВИЛ ТВОИ КЛЮЧИ) ✅
+        // ИДЕАЛЬНО ПРАВИЛЬНЫЕ КЛЮЧИ 
         // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyDIrQkUUg4pLVnwdNPGFHnh-z_bd8b5UNA",
-            authDomain: "avition-28634.firebaseapp.com",
-            projectId: "avition-28634",
-            storageBucket: "avition-28634.firebasestorage.app",
-            messagingSenderId: "787127395782",
-            appId: "1:787127395782:web:d76f5032877f953dcdbec7"
+            apiKey: "AIzaSyDvV4-QJZPc2RyODuOQpg44hvUcspD_XqE",
+            authDomain: "super-market-2025.firebaseapp.com",
+            projectId: "super-market-2025",
+            storageBucket: "super-market-2025.firebasestorage.app",
+            messagingSenderId: "757873908830",
+            appId: "1:757873908830:web:dedfaf2b85e3c02029a8cf"
         };
+        // ==========================================
 
-        // Инициализация
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
-        // Основное приложение
         const app = {
             currentUser: null,
             currentProduct: null,
@@ -191,230 +157,180 @@
             authModal: null,
 
             init: function() {
-                // Инициализация модального окна
                 this.authModal = new bootstrap.Modal(document.getElementById('authModal'));
-                
-                // Слушаем вход пользователя
                 auth.onAuthStateChanged(user => {
                     this.currentUser = user;
                     this.updateUI();
-                    if(!user) {
-                        this.showFeed(); // Если не вошел - просто лента
-                    }
+                    if(!user) this.showFeed();
                 });
-                
-                this.showFeed(); // Загрузка ленты при старте
+                this.showFeed();
             },
 
             updateUI: function() {
-                const authBtn = document.getElementById('authSection');
-                const userSec = document.getElementById('userSection');
-                const fab = document.getElementById('fabBtn');
-                
                 if (this.currentUser) {
-                    authBtn.classList.add('hidden');
-                    userSec.classList.remove('hidden');
-                    // Показываем имя или почту
+                    document.getElementById('authSection').classList.add('hidden');
+                    document.getElementById('userSection').classList.remove('hidden');
                     document.getElementById('userName').innerText = this.currentUser.displayName || this.currentUser.email;
-                    fab.classList.remove('hidden');
+                    document.getElementById('fabBtn').classList.remove('hidden');
                 } else {
-                    authBtn.classList.remove('hidden');
-                    userSec.classList.add('hidden');
-                    fab.classList.add('hidden');
+                    document.getElementById('authSection').classList.remove('hidden');
+                    document.getElementById('userSection').classList.add('hidden');
+                    document.getElementById('fabBtn').classList.add('hidden');
                 }
             },
 
-            // --- АВТОРИЗАЦИЯ (Email + Пароль) ---
-            
+            // --- Авторизация ---
             handleLogin: async function(e) {
                 e.preventDefault();
-                const email = document.getElementById('loginEmail').value;
-                const pass = document.getElementById('loginPass').value;
-                
                 try {
-                    await auth.signInWithEmailAndPassword(email, pass);
-                    this.authModal.hide();
-                    e.target.reset();
-                } catch (error) {
-                    alert("Ошибка входа: " + error.message);
-                }
+                    await auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPass').value);
+                    this.authModal.hide(); e.target.reset();
+                } catch (err) { alert("Ошибка входа: " + err.message); }
             },
 
             handleRegister: async function(e) {
                 e.preventDefault();
-                const name = document.getElementById('regName').value;
-                const email = document.getElementById('regEmail').value;
-                const pass = document.getElementById('regPass').value;
+                const pass1 = document.getElementById('regPass').value;
+                const pass2 = document.getElementById('regPassConfirm').value;
+
+                // Проверка совпадения паролей
+                if (pass1 !== pass2) {
+                    alert("Ошибка: Пароли не совпадают!");
+                    return;
+                }
 
                 try {
-                    const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                    // Сохраняем имя
-                    await cred.user.updateProfile({ displayName: name });
+                    const cred = await auth.createUserWithEmailAndPassword(document.getElementById('regEmail').value, pass1);
+                    await cred.user.updateProfile({ displayName: document.getElementById('regName').value });
+                    this.authModal.hide(); e.target.reset(); window.location.reload();
+                } catch (err) { alert("Ошибка регистрации: " + err.message); }
+            },
+            logout: () => auth.signOut(),
+
+            // --- Логика ---
+            showFeed: function() { this.hideViews(); document.getElementById('feedView').classList.remove('hidden'); this.loadFeed(); },
+            showCreate: function() { this.hideViews(); document.getElementById('createView').classList.remove('hidden'); },
+            hideViews: function() { ['feedView', 'createView', 'detailView'].forEach(id => document.getElementById(id).classList.add('hidden')); },
+            toggleLoader: function(s) { document.getElementById('loadingOverlay').classList.toggle('hidden', !s); },
+
+            // Создание товара БЕЗ ХРАНИЛИЩА (Сжатие в Base64)
+            createProduct: async function(e) {
+                e.preventDefault();
+                if (!this.currentUser) return;
+                this.toggleLoader(true);
+
+                try {
+                    const file = document.getElementById('prodImg').files[0];
+                    if (!file) throw new Error("Выберите фото!");
                     
-                    this.authModal.hide();
+                    const imageUrl = await this.compressImage(file); 
+
+                    await db.collection('products').add({
+                        title: document.getElementById('prodTitle').value,
+                        price: Number(document.getElementById('prodPrice').value),
+                        description: document.getElementById('prodDesc').value,
+                        imageUrl: imageUrl, 
+                        sellerId: this.currentUser.uid,
+                        sellerName: this.currentUser.displayName || "Продавец",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                     e.target.reset();
-                    // Перезагрузка страницы, чтобы обновилось имя в шапке
-                    setTimeout(() => window.location.reload(), 500);
-                } catch (error) {
-                    alert("Ошибка регистрации: " + error.message);
+                    this.showFeed();
+                } catch (err) {
+                    alert("Ошибка публикации: " + err.message);
+                } finally {
+                    this.toggleLoader(false);
                 }
             },
 
-            logout: function() {
-                auth.signOut();
+            // Сжатие картинки
+            compressImage: function(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 500; 
+                            const scaleSize = MAX_WIDTH / img.width;
+                            canvas.width = MAX_WIDTH;
+                            canvas.height = img.height * scaleSize;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            resolve(canvas.toDataURL('image/jpeg', 0.6));
+                        };
+                        img.onerror = (err) => reject(err);
+                    };
+                    reader.onerror = (err) => reject(err);
+                });
             },
 
-            // --- ЛОГИКА ТОВАРОВ И ЧАТА ---
-
-            showFeed: function() {
-                this.hideViews();
-                document.getElementById('feedView').classList.remove('hidden');
-                this.loadFeed();
+            loadFeed: function() {
+                const grid = document.getElementById('productsGrid');
+                grid.innerHTML = '';
+                db.collection('products').orderBy('createdAt', 'desc').limit(20).get().then(snap => {
+                    if (snap.empty) grid.innerHTML = '<div class="col-12 text-center mt-5 text-muted">Пока нет товаров. Добавь первый!</div>';
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const safeData = JSON.stringify(d).replace(/"/g, '&quot;');
+                        grid.innerHTML += `
+                            <div class="col-6 col-md-4 col-lg-3">
+                                <div class="product-card h-100" onclick='app.showDetail("${doc.id}", ${safeData})'>
+                                    <img src="${d.imageUrl}" class="product-img">
+                                    <div class="p-3"><h5 class="fw-bold mb-1">${d.price} ₽</h5><div class="text-truncate">${d.title}</div></div>
+                                </div>
+                            </div>`;
+                    });
+                });
             },
 
-            showCreate: function() {
+            showDetail: function(id, data) {
                 this.hideViews();
-                document.getElementById('createView').classList.remove('hidden');
-            },
-
-            showDetail: function(docId, data) {
-                this.hideViews();
-                this.currentProduct = { id: docId, ...data };
-                
+                this.currentProduct = { id, ...data };
                 document.getElementById('detailView').classList.remove('hidden');
                 document.getElementById('detailImg').src = data.imageUrl;
                 document.getElementById('detailTitle').innerText = data.title;
-                document.getElementById('detailPrice').innerText = Number(data.price).toLocaleString() + ' ₽';
+                document.getElementById('detailPrice').innerText = data.price + ' ₽';
                 document.getElementById('detailDesc').innerText = data.description;
-                document.getElementById('detailSeller').innerText = data.sellerName || "Продавец";
-
-                // Логика чата
-                if (this.currentUser) {
+                document.getElementById('detailSeller').innerText = data.sellerName;
+                
+                if(this.currentUser) {
                     document.getElementById('chatSection').classList.remove('hidden');
                     document.getElementById('loginToChat').classList.add('hidden');
-                    this.loadMessages(docId);
+                    this.loadMessages(id);
                 } else {
                     document.getElementById('chatSection').classList.add('hidden');
                     document.getElementById('loginToChat').classList.remove('hidden');
                 }
             },
 
-            hideViews: function() {
-                ['feedView', 'createView', 'detailView'].forEach(id => {
-                    document.getElementById(id).classList.add('hidden');
-                });
-            },
-
-            toggleLoader: function(show) {
-                const loader = document.getElementById('loadingOverlay');
-                show ? loader.classList.remove('hidden') : loader.classList.add('hidden');
-            },
-
-            // Загрузка товара в базу
-            createProduct: async function(e) {
-                e.preventDefault();
-                if (!this.currentUser) return;
-
-                this.toggleLoader(true);
-                const title = document.getElementById('prodTitle').value;
-                const price = Number(document.getElementById('prodPrice').value);
-                const desc = document.getElementById('prodDesc').value;
-                const file = document.getElementById('prodImg').files[0];
-
-                try {
-                    // 1. Грузим фото
-                    const storageRef = storage.ref(`products/${Date.now()}_${file.name}`);
-                    await storageRef.put(file);
-                    const imageUrl = await storageRef.getDownloadURL();
-
-                    // 2. Грузим данные
-                    await db.collection('products').add({
-                        title, price, description: desc, imageUrl,
-                        sellerId: this.currentUser.uid,
-                        sellerName: this.currentUser.displayName || "Продавец",
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    e.target.reset();
-                    this.showFeed();
-                } catch (error) {
-                    console.error(error);
-                    alert("Ошибка: " + error.message);
-                } finally {
-                    this.toggleLoader(false);
-                }
-            },
-
-            // Загрузка списка товаров
-            loadFeed: function() {
-                const grid = document.getElementById('productsGrid');
-                grid.innerHTML = '';
-                
-                db.collection('products').orderBy('createdAt', 'desc').limit(20).get().then(snapshot => {
-                    if (snapshot.empty) {
-                        grid.innerHTML = '<div class="col-12 text-center mt-5 text-muted">Пока нет объявлений. Станьте первым!</div>';
-                        return;
-                    }
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const safeData = JSON.stringify(data).replace(/"/g, '&quot;');
-                        
-                        const card = `
-                            <div class="col-6 col-md-4 col-lg-3">
-                                <div class="product-card h-100" onclick='app.showDetail("${doc.id}", ${safeData})'>
-                                    <img src="${data.imageUrl}" class="product-img">
-                                    <div class="p-3">
-                                        <h5 class="fw-bold mb-1">${Number(data.price).toLocaleString()} ₽</h5>
-                                        <div class="text-truncate">${data.title}</div>
-                                        <small class="text-muted" style="font-size:0.8rem">${data.sellerName || 'Продавец'}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        grid.innerHTML += card;
-                    });
-                });
-            },
-
-            // Чат
-            loadMessages: function(productId) {
+            loadMessages: function(pid) {
                 if (this.unsubscribeChat) this.unsubscribeChat();
-                const chatBox = document.getElementById('chatBox');
-                chatBox.innerHTML = '';
-
-                this.unsubscribeChat = db.collection('products').doc(productId).collection('messages')
-                    .orderBy('timestamp', 'asc')
-                    .onSnapshot(snapshot => {
-                        snapshot.docChanges().forEach(change => {
-                            if (change.type === "added") {
-                                const msg = change.doc.data();
-                                const isMe = msg.uid === this.currentUser.uid;
-                                const div = document.createElement('div');
-                                div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
-                                div.innerHTML = `<strong>${isMe ? 'Вы' : msg.name}:</strong> ${msg.text}`;
-                                chatBox.appendChild(div);
-                                chatBox.scrollTop = chatBox.scrollHeight;
-                            }
-                        });
+                const box = document.getElementById('chatBox'); box.innerHTML = '';
+                this.unsubscribeChat = db.collection('products').doc(pid).collection('messages').orderBy('timestamp', 'asc').onSnapshot(s => {
+                    s.docChanges().forEach(c => {
+                        if (c.type === "added") {
+                            const m = c.doc.data();
+                            const isMe = m.uid === this.currentUser.uid;
+                            box.innerHTML += `<div class="message ${isMe?'msg-me':'msg-other'}"><strong>${isMe?'Вы':m.name}:</strong> ${m.text}</div>`;
+                            box.scrollTop = box.scrollHeight;
+                        }
                     });
+                });
             },
 
             sendMessage: function() {
-                const input = document.getElementById('msgInput');
-                const text = input.value.trim();
-                if (!text || !this.currentProduct) return;
-
+                const txt = document.getElementById('msgInput').value.trim();
+                if (!txt || !this.currentProduct) return;
                 db.collection('products').doc(this.currentProduct.id).collection('messages').add({
-                    text: text,
-                    uid: this.currentUser.uid,
-                    name: this.currentUser.displayName || "User",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    text: txt, uid: this.currentUser.uid, name: this.currentUser.displayName, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                input.value = '';
+                document.getElementById('msgInput').value = '';
             }
         };
 
-        // Старт
         document.addEventListener('DOMContentLoaded', () => app.init());
     </script>
 </body>
