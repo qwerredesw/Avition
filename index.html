@@ -4,16 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avition Marketplace</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     
-    <script>
-        window.onerror = function(msg, url, line) {
-            alert("Ошибка на сайте:\n" + msg + "\nСтрока: " + line);
-            return false;
-        };
-    </script>
-
     <style>
         :root { --primary-color: #2ecc71; --bg-color: #f8f9fa; }
         body { background-color: var(--bg-color); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -37,7 +33,7 @@
             <a class="navbar-brand fw-bold text-success" href="#" onclick="window.location.reload()">Avition</a>
             <div class="d-flex align-items-center">
                 <div id="authSection">
-                    <button class="btn btn-outline-success btn-sm" onclick="openAuthModal()">Вход / Регистрация</button>
+                    <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#authModal">Вход / Регистрация</button>
                 </div>
                 <div id="userSection" class="hidden d-flex align-items-center gap-3">
                     <span id="userName" class="fw-bold small"></span>
@@ -109,7 +105,7 @@
     <div class="modal fade" id="authModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header border-0"><h5 class="modal-title">Вход в Avition</h5><button type="button" class="btn-close" data-bs-dismiss="modal" onclick="closeAuthModal()"></button></div>
+                <div class="modal-header border-0"><h5 class="modal-title">Вход в Avition</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <ul class="nav nav-pills nav-fill mb-3"><li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#loginTab">Вход</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#regTab">Регистрация</button></li></ul>
                     <div class="tab-content">
@@ -138,11 +134,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // ==========================================
-        // КЛЮЧИ (СКОПИРОВАНЫ ВЕРНО)
+        // КЛЮЧИ (ВЕРНЫЕ)
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyDvV4-QJZPc2RyODuOQpg44hvUcspD_XqE",
@@ -154,193 +149,191 @@
         };
         // ==========================================
 
-        // Глобальные переменные для принудительного управления окном
-        let authModalInstance = null;
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        function openAuthModal() {
-            try {
-                const el = document.getElementById('authModal');
-                if(!authModalInstance) {
-                    authModalInstance = new bootstrap.Modal(el);
+        const app = {
+            currentUser: null,
+            currentProduct: null,
+            unsubscribeChat: null,
+
+            init: function() {
+                // МЫ УБРАЛИ ТУТ СТРОКУ new bootstrap.Modal, чтобы не было ошибок!
+                auth.onAuthStateChanged(user => {
+                    this.currentUser = user;
+                    this.updateUI();
+                    if(!user) this.showFeed();
+                });
+                this.showFeed();
+            },
+
+            updateUI: function() {
+                if (this.currentUser) {
+                    document.getElementById('authSection').classList.add('hidden');
+                    document.getElementById('userSection').classList.remove('hidden');
+                    document.getElementById('userName').innerText = this.currentUser.displayName || this.currentUser.email;
+                    document.getElementById('fabBtn').classList.remove('hidden');
+                } else {
+                    document.getElementById('authSection').classList.remove('hidden');
+                    document.getElementById('userSection').classList.add('hidden');
+                    document.getElementById('fabBtn').classList.add('hidden');
                 }
-                authModalInstance.show();
-            } catch (e) {
-                alert("Ошибка открытия окна: " + e.message + "\nВозможно, не загрузился Bootstrap.");
-            }
-        }
+            },
 
-        function closeAuthModal() {
-            if(authModalInstance) authModalInstance.hide();
-        }
-
-        try {
-            firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth();
-            const db = firebase.firestore();
-
-            const app = {
-                currentUser: null,
-                currentProduct: null,
-                unsubscribeChat: null,
-
-                init: function() {
-                    auth.onAuthStateChanged(user => {
-                        this.currentUser = user;
-                        this.updateUI();
-                        if(!user) this.showFeed();
-                    });
-                    this.showFeed();
-                },
-
-                updateUI: function() {
-                    if (this.currentUser) {
-                        document.getElementById('authSection').classList.add('hidden');
-                        document.getElementById('userSection').classList.remove('hidden');
-                        document.getElementById('userName').innerText = this.currentUser.displayName || this.currentUser.email;
-                        document.getElementById('fabBtn').classList.remove('hidden');
+            // ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ЗАКРЫТИЯ ОКНА
+            closeModal: function() {
+                try {
+                    const modalEl = document.getElementById('authModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl); // Берем уже открытое окно
+                    if (modal) {
+                        modal.hide();
                     } else {
-                        document.getElementById('authSection').classList.remove('hidden');
-                        document.getElementById('userSection').classList.add('hidden');
-                        document.getElementById('fabBtn').classList.add('hidden');
+                        // Если JS "потерял" окно, закроем его вручную, убрав класс
+                        modalEl.classList.remove('show');
+                        modalEl.style.display = 'none';
+                        document.body.classList.remove('modal-open');
+                        const backdrop = document.querySelector('.modal-backdrop');
+                        if(backdrop) backdrop.remove();
                     }
-                },
+                } catch (e) { console.error(e); }
+            },
 
-                // --- Авторизация ---
-                handleLogin: async function(e) {
-                    e.preventDefault();
-                    try {
-                        await auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPass').value);
-                        closeAuthModal(); e.target.reset();
-                    } catch (err) { alert("Ошибка входа: " + err.message); }
-                },
+            // --- Авторизация ---
+            handleLogin: async function(e) {
+                e.preventDefault();
+                try {
+                    await auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPass').value);
+                    this.closeModal(); 
+                    e.target.reset();
+                } catch (err) { alert("Ошибка входа: " + err.message); }
+            },
 
-                handleRegister: async function(e) {
-                    e.preventDefault();
-                    const pass1 = document.getElementById('regPass').value;
-                    const pass2 = document.getElementById('regPassConfirm').value;
-                    if (pass1 !== pass2) { alert("Пароли не совпадают!"); return; }
+            handleRegister: async function(e) {
+                e.preventDefault();
+                const pass1 = document.getElementById('regPass').value;
+                const pass2 = document.getElementById('regPassConfirm').value;
+                if (pass1 !== pass2) { alert("Пароли не совпадают!"); return; }
 
-                    try {
-                        const cred = await auth.createUserWithEmailAndPassword(document.getElementById('regEmail').value, pass1);
-                        await cred.user.updateProfile({ displayName: document.getElementById('regName').value });
-                        closeAuthModal(); e.target.reset(); window.location.reload();
-                    } catch (err) { alert("Ошибка регистрации: " + err.message); }
-                },
-                logout: () => auth.signOut(),
+                try {
+                    const cred = await auth.createUserWithEmailAndPassword(document.getElementById('regEmail').value, pass1);
+                    await cred.user.updateProfile({ displayName: document.getElementById('regName').value });
+                    this.closeModal(); 
+                    e.target.reset(); 
+                    window.location.reload();
+                } catch (err) { alert("Ошибка регистрации: " + err.message); }
+            },
+            logout: () => auth.signOut(),
 
-                // --- Логика ---
-                showFeed: function() { this.hideViews(); document.getElementById('feedView').classList.remove('hidden'); this.loadFeed(); },
-                showCreate: function() { this.hideViews(); document.getElementById('createView').classList.remove('hidden'); },
-                hideViews: function() { ['feedView', 'createView', 'detailView'].forEach(id => document.getElementById(id).classList.add('hidden')); },
-                toggleLoader: function(s) { document.getElementById('loadingOverlay').classList.toggle('hidden', !s); },
+            // --- Логика ---
+            showFeed: function() { this.hideViews(); document.getElementById('feedView').classList.remove('hidden'); this.loadFeed(); },
+            showCreate: function() { this.hideViews(); document.getElementById('createView').classList.remove('hidden'); },
+            hideViews: function() { ['feedView', 'createView', 'detailView'].forEach(id => document.getElementById(id).classList.add('hidden')); },
+            toggleLoader: function(s) { document.getElementById('loadingOverlay').classList.toggle('hidden', !s); },
 
-                createProduct: async function(e) {
-                    e.preventDefault();
-                    if (!this.currentUser) return;
-                    this.toggleLoader(true);
-                    try {
-                        const file = document.getElementById('prodImg').files[0];
-                        if (!file) throw new Error("Выберите фото!");
-                        const imageUrl = await this.compressImage(file); 
-                        await db.collection('products').add({
-                            title: document.getElementById('prodTitle').value,
-                            price: Number(document.getElementById('prodPrice').value),
-                            description: document.getElementById('prodDesc').value,
-                            imageUrl: imageUrl, 
-                            sellerId: this.currentUser.uid,
-                            sellerName: this.currentUser.displayName || "Продавец",
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        e.target.reset(); this.showFeed();
-                    } catch (err) { alert("Ошибка публикации: " + err.message); } 
-                    finally { this.toggleLoader(false); }
-                },
+            createProduct: async function(e) {
+                e.preventDefault();
+                if (!this.currentUser) return;
+                this.toggleLoader(true);
+                try {
+                    const file = document.getElementById('prodImg').files[0];
+                    if (!file) throw new Error("Выберите фото!");
+                    const imageUrl = await this.compressImage(file); 
+                    await db.collection('products').add({
+                        title: document.getElementById('prodTitle').value,
+                        price: Number(document.getElementById('prodPrice').value),
+                        description: document.getElementById('prodDesc').value,
+                        imageUrl: imageUrl, 
+                        sellerId: this.currentUser.uid,
+                        sellerName: this.currentUser.displayName || "Продавец",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    e.target.reset(); this.showFeed();
+                } catch (err) { alert("Ошибка публикации: " + err.message); } 
+                finally { this.toggleLoader(false); }
+            },
 
-                compressImage: function(file) {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.readAsDataURL(file);
-                        reader.onload = (event) => {
-                            const img = new Image();
-                            img.src = event.target.result;
-                            img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                const MAX_WIDTH = 500; 
-                                const scaleSize = MAX_WIDTH / img.width;
-                                canvas.width = MAX_WIDTH;
-                                canvas.height = img.height * scaleSize;
-                                const ctx = canvas.getContext('2d');
-                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                                resolve(canvas.toDataURL('image/jpeg', 0.6));
-                            };
-                            img.onerror = (err) => reject(err);
+            compressImage: function(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 500; 
+                            const scaleSize = MAX_WIDTH / img.width;
+                            canvas.width = MAX_WIDTH;
+                            canvas.height = img.height * scaleSize;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            resolve(canvas.toDataURL('image/jpeg', 0.6));
                         };
-                        reader.onerror = (err) => reject(err);
-                    });
-                },
+                        img.onerror = (err) => reject(err);
+                    };
+                    reader.onerror = (err) => reject(err);
+                });
+            },
 
-                loadFeed: function() {
-                    const grid = document.getElementById('productsGrid');
-                    grid.innerHTML = '';
-                    db.collection('products').orderBy('createdAt', 'desc').limit(20).get().then(snap => {
-                        if (snap.empty) grid.innerHTML = '<div class="col-12 text-center mt-5 text-muted">Пока нет товаров. Добавь первый!</div>';
-                        snap.forEach(doc => {
-                            const d = doc.data();
-                            const safeData = JSON.stringify(d).replace(/"/g, '&quot;');
-                            grid.innerHTML += `<div class="col-6 col-md-4 col-lg-3"><div class="product-card h-100" onclick='app.showDetail("${doc.id}", ${safeData})'><img src="${d.imageUrl}" class="product-img"><div class="p-3"><h5 class="fw-bold mb-1">${d.price} ₽</h5><div class="text-truncate">${d.title}</div></div></div></div>`;
-                        });
+            loadFeed: function() {
+                const grid = document.getElementById('productsGrid');
+                grid.innerHTML = '';
+                db.collection('products').orderBy('createdAt', 'desc').limit(20).get().then(snap => {
+                    if (snap.empty) grid.innerHTML = '<div class="col-12 text-center mt-5 text-muted">Пока нет товаров. Добавь первый!</div>';
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const safeData = JSON.stringify(d).replace(/"/g, '&quot;');
+                        grid.innerHTML += `<div class="col-6 col-md-4 col-lg-3"><div class="product-card h-100" onclick='app.showDetail("${doc.id}", ${safeData})'><img src="${d.imageUrl}" class="product-img"><div class="p-3"><h5 class="fw-bold mb-1">${d.price} ₽</h5><div class="text-truncate">${d.title}</div></div></div></div>`;
                     });
-                },
+                });
+            },
 
-                showDetail: function(id, data) {
-                    this.hideViews();
-                    this.currentProduct = { id, ...data };
-                    document.getElementById('detailView').classList.remove('hidden');
-                    document.getElementById('detailImg').src = data.imageUrl;
-                    document.getElementById('detailTitle').innerText = data.title;
-                    document.getElementById('detailPrice').innerText = data.price + ' ₽';
-                    document.getElementById('detailDesc').innerText = data.description;
-                    document.getElementById('detailSeller').innerText = data.sellerName;
-                    if(this.currentUser) {
-                        document.getElementById('chatSection').classList.remove('hidden');
-                        document.getElementById('loginToChat').classList.add('hidden');
-                        this.loadMessages(id);
-                    } else {
-                        document.getElementById('chatSection').classList.add('hidden');
-                        document.getElementById('loginToChat').classList.remove('hidden');
-                    }
-                },
-
-                loadMessages: function(pid) {
-                    if (this.unsubscribeChat) this.unsubscribeChat();
-                    const box = document.getElementById('chatBox'); box.innerHTML = '';
-                    this.unsubscribeChat = db.collection('products').doc(pid).collection('messages').orderBy('timestamp', 'asc').onSnapshot(s => {
-                        s.docChanges().forEach(c => {
-                            if (c.type === "added") {
-                                const m = c.doc.data();
-                                const isMe = m.uid === this.currentUser.uid;
-                                box.innerHTML += `<div class="message ${isMe?'msg-me':'msg-other'}"><strong>${isMe?'Вы':m.name}:</strong> ${m.text}</div>`;
-                                box.scrollTop = box.scrollHeight;
-                            }
-                        });
-                    });
-                },
-
-                sendMessage: function() {
-                    const txt = document.getElementById('msgInput').value.trim();
-                    if (!txt || !this.currentProduct) return;
-                    db.collection('products').doc(this.currentProduct.id).collection('messages').add({
-                        text: txt, uid: this.currentUser.uid, name: this.currentUser.displayName, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    document.getElementById('msgInput').value = '';
+            showDetail: function(id, data) {
+                this.hideViews();
+                this.currentProduct = { id, ...data };
+                document.getElementById('detailView').classList.remove('hidden');
+                document.getElementById('detailImg').src = data.imageUrl;
+                document.getElementById('detailTitle').innerText = data.title;
+                document.getElementById('detailPrice').innerText = data.price + ' ₽';
+                document.getElementById('detailDesc').innerText = data.description;
+                document.getElementById('detailSeller').innerText = data.sellerName;
+                if(this.currentUser) {
+                    document.getElementById('chatSection').classList.remove('hidden');
+                    document.getElementById('loginToChat').classList.add('hidden');
+                    this.loadMessages(id);
+                } else {
+                    document.getElementById('chatSection').classList.add('hidden');
+                    document.getElementById('loginToChat').classList.remove('hidden');
                 }
-            };
+            },
 
-            document.addEventListener('DOMContentLoaded', () => app.init());
+            loadMessages: function(pid) {
+                if (this.unsubscribeChat) this.unsubscribeChat();
+                const box = document.getElementById('chatBox'); box.innerHTML = '';
+                this.unsubscribeChat = db.collection('products').doc(pid).collection('messages').orderBy('timestamp', 'asc').onSnapshot(s => {
+                    s.docChanges().forEach(c => {
+                        if (c.type === "added") {
+                            const m = c.doc.data();
+                            const isMe = m.uid === this.currentUser.uid;
+                            box.innerHTML += `<div class="message ${isMe?'msg-me':'msg-other'}"><strong>${isMe?'Вы':m.name}:</strong> ${m.text}</div>`;
+                            box.scrollTop = box.scrollHeight;
+                        }
+                    });
+                });
+            },
 
-        } catch (globalError) {
-            alert("Критическая ошибка инициализации: " + globalError.message);
-        }
+            sendMessage: function() {
+                const txt = document.getElementById('msgInput').value.trim();
+                if (!txt || !this.currentProduct) return;
+                db.collection('products').doc(this.currentProduct.id).collection('messages').add({
+                    text: txt, uid: this.currentUser.uid, name: this.currentUser.displayName, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('msgInput').value = '';
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => app.init());
     </script>
 </body>
 </html>
