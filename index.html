@@ -33,7 +33,6 @@
 
         .nav-badge { position: absolute; top: 4px; right: 25%; background: #e74c3c; color: white; border-radius: 50%; min-width: 18px; height: 18px; padding: 0 4px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
 
-        /* ГАЛЕРЕЯ */
         .gallery-container { position: relative; width: 100%; height: 400px; background: #000; border-radius: 12px; overflow: hidden; }
         .gallery-img { width: 100%; height: 100%; object-fit: contain; }
         .gallery-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: 0.2s; }
@@ -41,6 +40,21 @@
         .gallery-btn.prev { left: 10px; }
         .gallery-btn.next { right: 10px; }
         .gallery-counter { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; z-index: 10; }
+
+        /* --- СТИЛИ ДЛЯ СВОРАЧИВАНИЯ ТЕКСТА --- */
+        .desc-box { position: relative; overflow: hidden; transition: max-height 0.4s ease; }
+        /* Состояние свернуто: ограничена высота и градиент */
+        .desc-collapsed { max-height: 110px; }
+        .desc-collapsed::after { 
+            content: ""; 
+            position: absolute; 
+            bottom: 0; left: 0; 
+            width: 100%; height: 60px; 
+            background: linear-gradient(to bottom, transparent, white); 
+            pointer-events: none; 
+        }
+        /* Состояние развернуто: высота авто (большая) */
+        .desc-expanded { max-height: 2000px; } 
 
         .hidden { display: none !important; }
         #loadingOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.9); z-index: 2000; display: flex; justify-content: center; align-items: center; }
@@ -139,9 +153,9 @@
                     </div>
 
                     <div class="p-3 bg-white rounded shadow-sm mb-3">
-                        <p class="mb-0" id="detailDesc" style="white-space: pre-wrap;"></p>
+                        <div id="detailDesc" class="desc-box desc-collapsed" style="white-space: pre-wrap;"></div>
+                        <button id="btnToggleDesc" class="btn btn-link p-0 mt-2 text-decoration-none fw-bold text-success hidden" onclick="app.toggleDesc()">Читать далее...</button>
                     </div>
-                    
                     <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
                         <div>
                             <small class="text-muted">Продавец</small>
@@ -261,10 +275,7 @@
                     this.loadFeed();
                 },
 
-                // ФУНКЦИЯ ДЛЯ КРАСИВОЙ ЦЕНЫ С ПРОБЕЛАМИ
-                formatPrice: function(price) {
-                    return new Intl.NumberFormat('ru-RU').format(price);
-                },
+                formatPrice: function(price) { return new Intl.NumberFormat('ru-RU').format(price); },
 
                 updateUI: function() {
                     const nav = document.getElementById('bottomNav');
@@ -430,6 +441,22 @@
                     });
                 },
 
+                // --- НОВАЯ ЛОГИКА ОПИСАНИЯ ---
+                toggleDesc: function() {
+                    const el = document.getElementById('detailDesc');
+                    const btn = document.getElementById('btnToggleDesc');
+                    
+                    if(el.classList.contains('desc-collapsed')) {
+                        el.classList.remove('desc-collapsed');
+                        el.classList.add('desc-expanded');
+                        btn.innerText = "Свернуть";
+                    } else {
+                        el.classList.add('desc-collapsed');
+                        el.classList.remove('desc-expanded');
+                        btn.innerText = "Читать далее...";
+                    }
+                },
+
                 showDetail: function(id, data) {
                     this.currentProduct = { id, ...data };
                     
@@ -438,24 +465,37 @@
                     this.updateGalleryView();
 
                     document.getElementById('detailTitle').innerText = data.title;
-                    
-                    // ФОРМАТИРОВАНИЕ ЦЕНЫ
                     document.getElementById('detailPrice').innerText = this.formatPrice(data.price) + ' ₽';
-                    
-                    document.getElementById('detailDesc').innerText = data.description;
                     document.getElementById('detailSeller').innerText = data.sellerName;
                     
+                    // -- ЛОГИКА ДЛЯ ТЕКСТА --
+                    const descEl = document.getElementById('detailDesc');
+                    const descBtn = document.getElementById('btnToggleDesc');
+                    
+                    descEl.innerText = data.description;
+                    
+                    // Сбрасываем состояние (свернуто)
+                    descEl.classList.remove('desc-expanded');
+                    descEl.classList.add('desc-collapsed');
+                    descBtn.innerText = "Читать далее...";
+                    
+                    // Проверяем длину текста (если короткий - не скрываем)
+                    if(data.description.length < 200) {
+                        descEl.classList.remove('desc-collapsed');
+                        descBtn.classList.add('hidden');
+                    } else {
+                        descBtn.classList.remove('hidden');
+                    }
+                    // ----------------------
+
                     const btnWrite = document.getElementById('btnWriteSeller');
                     const controls = document.getElementById('ownerControls');
-
                     const isOwner = this.user && data.sellerId === this.user.uid;
                     const isAdmin = this.user && this.user.email === ADMIN_EMAIL;
 
-                    if(isOwner || isAdmin) {
-                        controls.classList.remove('hidden');
-                    } else {
-                        controls.classList.add('hidden');
-                    }
+                    if(isOwner || isAdmin) controls.classList.remove('hidden');
+                    else controls.classList.add('hidden');
+                    
                     if(isOwner) btnWrite.classList.add('hidden');
                     else btnWrite.classList.remove('hidden');
                     
@@ -494,7 +534,6 @@
                     const safe = JSON.stringify(d).replace(/"/g, '&quot;');
                     const thumb = (d.images && d.images.length > 0) ? d.images[0] : d.imageUrl;
                     
-                    // ФОРМАТИРОВАНИЕ ЦЕНЫ В ЛЕНТЕ
                     return `<div class="col-6 col-md-4 col-lg-3">
                         <div class="product-card h-100" onclick='app.showDetail("${id}", ${safe})'>
                             <img src="${thumb}" class="product-img">
