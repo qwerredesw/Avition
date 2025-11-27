@@ -27,11 +27,11 @@
         .msg-img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
         
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; padding: 10px 0; display: flex; justify-content: space-around; }
-        .nav-item-custom { text-align: center; color: #95a5a6; font-size: 0.8rem; cursor: pointer; width: 100%; position: relative; } /* Added position relative */
+        .nav-item-custom { text-align: center; color: #95a5a6; font-size: 0.8rem; cursor: pointer; width: 100%; position: relative; }
         .nav-item-custom.active { color: var(--primary-color); font-weight: bold; }
         .nav-item-custom i { font-size: 1.4rem; display: block; margin-bottom: 2px; }
 
-        /* Стиль для метки сообщений */
+        /* Метка сообщений */
         .nav-badge { 
             position: absolute; 
             top: 4px; 
@@ -142,6 +142,7 @@
                     <div class="p-3 bg-white rounded shadow-sm mb-3">
                         <p class="mb-0" id="detailDesc" style="white-space: pre-wrap;"></p>
                     </div>
+                    
                     <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
                         <div>
                             <small class="text-muted">Продавец</small>
@@ -430,11 +431,17 @@
                     const isOwner = this.user && data.sellerId === this.user.uid;
                     const isAdmin = this.user && this.user.email === ADMIN_EMAIL;
 
+                    // 1. Показываем панель управления, если Админ или Владелец
                     if(isOwner || isAdmin) {
                         controls.classList.remove('hidden');
-                        btnWrite.classList.add('hidden');
                     } else {
                         controls.classList.add('hidden');
+                    }
+
+                    // 2. Показываем кнопку "Написать", если НЕ владелец (админ может писать другим)
+                    if(isOwner) {
+                        btnWrite.classList.add('hidden');
+                    } else {
                         btnWrite.classList.remove('hidden');
                     }
                     
@@ -461,7 +468,6 @@
                     const chatId = [this.user.uid, prod.sellerId, prod.id].sort().join('_');
                     
                     const chatRef = db.collection('chats').doc(chatId);
-                    // При создании чата обновляем lastSeen для себя, чтобы не горело уведомление
                     await chatRef.set({
                         users: [this.user.uid, prod.sellerId],
                         userNames: {
@@ -473,6 +479,7 @@
                         [`lastSeen.${this.user.uid}`]: firebase.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
 
+                    // Имя собеседника = имя продавца (если я покупатель/админ)
                     this.openChatRoom(chatId, prod.sellerName, prod.title);
                 },
 
@@ -496,7 +503,6 @@
                                 const otherId = d.users.find(u => u !== this.user.uid);
                                 let otherName = (d.userNames && d.userNames[otherId]) ? d.userNames[otherId] : "Собеседник";
                                 
-                                // Логика подсчета непрочитанных
                                 const lastMsgTime = d.updatedAt?.seconds || 0;
                                 const mySeenTime = (d.lastSeen && d.lastSeen[this.user.uid]?.seconds) || 0;
                                 const isUnread = lastMsgTime > mySeenTime;
@@ -524,7 +530,6 @@
                                     </div>`;
                             });
 
-                            // Обновляем бейдж внизу
                             if(totalUnread > 0) {
                                 badge.innerText = totalUnread;
                                 badge.classList.remove('hidden');
@@ -539,7 +544,6 @@
                     document.getElementById('chatHeaderName').innerText = userName;
                     document.getElementById('chatHeaderProduct').innerText = prodTitle;
                     
-                    // Когда открываем чат — обновляем время "последнего просмотра"
                     db.collection('chats').doc(chatId).update({
                         [`lastSeen.${this.user.uid}`]: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -594,8 +598,6 @@
                 pushMessage: async function(msgData) {
                     const payload = { ...msgData, uid: this.user.uid, ts: firebase.firestore.FieldValue.serverTimestamp() };
                     await db.collection('chats').doc(this.activeChatId).collection('messages').add(payload);
-                    
-                    // Обновляем чат: последнее сообщение + время + ТВОЕ время просмотра (чтобы ты не видел бейдж сам от себя)
                     await db.collection('chats').doc(this.activeChatId).update({
                         lastMessage: msgData.text || 'Фото',
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
