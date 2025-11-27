@@ -18,7 +18,6 @@
         
         .chat-list-item { cursor: pointer; transition: 0.2s; border-radius: 10px; }
         .chat-list-item:hover { background: #e9ecef; }
-        /* Аватарка в списке чатов */
         .chat-avatar { width: 40px; height: 40px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 20px; flex-shrink: 0; }
 
         .chat-window { height: 65vh; overflow-y: auto; background: #f1f2f6; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -72,6 +71,8 @@
                     </div>
                     <button class="btn btn-light text-danger" onclick="app.logout()"><i class="bi bi-box-arrow-right"></i></button>
                 </div>
+                <div id="adminBadge" class="alert alert-danger p-2 mb-3 hidden"><i class="bi bi-shield-lock-fill"></i> Вы администратор</div>
+                
                 <hr>
                 <div class="d-grid gap-2">
                     <button class="btn btn-outline-secondary btn-sm" onclick="app.editProfileName()">Изменить имя</button>
@@ -112,6 +113,14 @@
                 <div class="col-md-6">
                     <h2 id="detailTitle" class="fw-bold"></h2>
                     <h3 class="text-success mb-3" id="detailPrice"></h3>
+                    
+                    <div id="ownerControls" class="card p-2 mb-3 border-danger hidden" style="border-style: dashed;">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-dark flex-grow-1" onclick="app.editCurrentProduct()">Редактировать</button>
+                            <button class="btn btn-danger flex-grow-1" onclick="app.deleteCurrentProduct()">Удалить</button>
+                        </div>
+                    </div>
+
                     <div class="p-3 bg-white rounded shadow-sm mb-3">
                         <p class="mb-0" id="detailDesc" style="white-space: pre-wrap;"></p>
                     </div>
@@ -188,7 +197,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
-        // ВСТАВЬТЕ СЮДА ВАШИ КЛЮЧИ, ЕСЛИ ОНИ СЛЕТЕЛИ
+        // --- ВАШИ КЛЮЧИ ---
         const firebaseConfig = {
           apiKey: "AIzaSyDvV4-QJZPc2RyODuOQpg44hvUcspD_XqE",
           authDomain: "super-market-2025.firebaseapp.com",
@@ -197,6 +206,11 @@
           messagingSenderId: "757873908830",
           appId: "1:757873908830:web:dedfaf2b85e3c02029a8cf"
         };
+        // ------------------
+        
+        // --- EMAIL АДМИНА ---
+        const ADMIN_EMAIL = "artemborovitskiy0312@gmail.com";
+        // --------------------
 
         let modalInstance = null;
         function openAuthModal() { modalInstance = new bootstrap.Modal(document.getElementById('authModal')); modalInstance.show(); }
@@ -238,6 +252,14 @@
                         authBtn.classList.add('hidden');
                         document.getElementById('profileName').innerText = this.user.displayName || "Пользователь";
                         document.getElementById('profileEmail').innerText = this.user.email;
+                        
+                        // Показываем плашку админа если это он
+                        if(this.user.email === ADMIN_EMAIL) {
+                            document.getElementById('adminBadge').classList.remove('hidden');
+                        } else {
+                            document.getElementById('adminBadge').classList.add('hidden');
+                        }
+
                     } else {
                         nav.classList.add('hidden');
                         authBtn.classList.remove('hidden');
@@ -331,13 +353,26 @@
                             data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                             await db.collection('products').add(data);
                         }
-                        this.nav('viewProfile');
+                        this.nav('viewFeed'); // После сохранения в ленту
                     } catch(e) { alert(e.message); }
                     finally { this.loader(false); }
                 },
 
+                // Удаление по ID (внутренняя функция)
                 deleteProduct: async function(id) {
-                    if(confirm("Удалить?")) { await db.collection('products').doc(id).delete(); this.loadMyProducts(); }
+                    if(confirm("Вы уверены, что хотите удалить объявление?")) { 
+                        await db.collection('products').doc(id).delete(); 
+                        alert("Удалено");
+                        this.nav('viewFeed'); // Возвращаемся в ленту
+                    }
+                },
+
+                // Кнопки из просмотра товара
+                deleteCurrentProduct: function() {
+                    if(this.currentProduct) this.deleteProduct(this.currentProduct.id);
+                },
+                editCurrentProduct: function() {
+                    if(this.currentProduct) this.openEditMode(this.currentProduct.id, this.currentProduct);
                 },
 
                 loadFeed: function() {
@@ -379,9 +414,22 @@
                     document.getElementById('detailPrice').innerText = data.price + ' ₽';
                     document.getElementById('detailDesc').innerText = data.description;
                     document.getElementById('detailSeller').innerText = data.sellerName;
-                    const btn = document.getElementById('btnWriteSeller');
-                    if(this.user && data.sellerId === this.user.uid) btn.classList.add('hidden');
-                    else btn.classList.remove('hidden');
+                    
+                    const btnWrite = document.getElementById('btnWriteSeller');
+                    const controls = document.getElementById('ownerControls');
+
+                    // Логика Админа или Владельца
+                    const isOwner = this.user && data.sellerId === this.user.uid;
+                    const isAdmin = this.user && this.user.email === ADMIN_EMAIL;
+
+                    if(isOwner || isAdmin) {
+                        controls.classList.remove('hidden'); // Показываем кнопки управления
+                        btnWrite.classList.add('hidden');   // Скрываем "Написать", если это мой товар
+                    } else {
+                        controls.classList.add('hidden');
+                        btnWrite.classList.remove('hidden');
+                    }
+                    
                     this.nav('viewDetail');
                 },
 
@@ -398,27 +446,23 @@
                     </div>`;
                 },
 
-                // --- ЧАТЫ (С ИМЕНАМИ) ---
+                // --- ЧАТЫ ---
                 startChat: async function() {
                     if(!this.user) return openAuthModal();
                     const prod = this.currentProduct;
                     const chatId = [this.user.uid, prod.sellerId, prod.id].sort().join('_');
                     
                     const chatRef = db.collection('chats').doc(chatId);
-                    
-                    // Обновляем данные чата (или создаем), чтобы записать ИМЕНА
                     await chatRef.set({
                         users: [this.user.uid, prod.sellerId],
-                        // Сохраняем карту имен: ID -> Имя
                         userNames: {
                             [this.user.uid]: this.user.displayName || "Я",
                             [prod.sellerId]: prod.sellerName || "Продавец"
                         },
                         productTitle: prod.title,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true }); // merge: true чтобы не стереть старые сообщения если что
+                    }, { merge: true });
 
-                    // Сразу переходим, имя собеседника - это имя продавца
                     this.openChatRoom(chatId, prod.sellerName, prod.title);
                 },
 
@@ -436,9 +480,7 @@
                             chats.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
 
                             chats.forEach(d => {
-                                // Ищем ID собеседника (того, кто не я)
                                 const otherId = d.users.find(u => u !== this.user.uid);
-                                // Пробуем достать имя из карты имен, если нет - пишем "Собеседник"
                                 let otherName = (d.userNames && d.userNames[otherId]) ? d.userNames[otherId] : "Собеседник";
                                 
                                 list.innerHTML += `
@@ -460,7 +502,6 @@
 
                 openChatRoom: function(chatId, userName, prodTitle) {
                     this.activeChatId = chatId;
-                    // Обновляем заголовок чата
                     document.getElementById('chatHeaderName').innerText = userName;
                     document.getElementById('chatHeaderProduct').innerText = prodTitle;
                     
